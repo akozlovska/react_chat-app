@@ -1,25 +1,23 @@
+/** @jsxImportSource theme-ui */
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { ThemeUIProvider } from 'theme-ui';
+import { Outlet } from 'react-router-dom';
+import theme from './utils/theme';
+import './App.scss';
+import NavBar from './components/NavBar';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ThemeUIProvider theme={theme}>
+      <div className="App">
+        <header>
+          <NavBar />
+        </header>
+        <main className="main">
+          <Outlet />
+        </main>
+      </div>
+    </ThemeUIProvider>
   );
 }
 

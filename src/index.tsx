@@ -1,19 +1,92 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
 import App from './App';
-import reportWebVitals from './reportWebVitals';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { UserProvider } from './context/UserContext';
+import { RoomProvider } from './context/RoomContext';
+import ProfilePage from './pages/ProfilePage';
+import WelcomePage from './pages/WelcomePage';
+import PrivateRoutes from './components/PrivateRoutes';
+import CreateRoomPage from './pages/CreateRoomPage';
+import AllRoomsPage from './pages/AllRoomsPage';
+import ChatPage from './pages/ChatPage';
+import RoomInfoPage from './pages/RoomInfoPage';
+import NotFoundPage from './pages/NotFoundPage';
+import './index.scss';
 
 const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  document.getElementById('root') as HTMLElement,
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <App />,
+    children: [
+      {
+        index: true,
+        element: <WelcomePage />,
+      },
+      {
+        element: <PrivateRoutes />,
+        children: [
+          {
+            path: 'profile',
+            element: <ProfilePage />,
+            children: [
+              {
+                path: 'directs',
+                children: [
+                  {
+                    path: ':directId',
+                    element: <ChatPage />,
+                  },
+                ],
+              },
+              {
+                path: 'rooms',
+                children: [
+                  {
+                    index: true,
+                    element: <AllRoomsPage />,
+                  },
+                  {
+                    path: 'create',
+                    element: <CreateRoomPage />,
+                  },
+                  {
+                    path: ':roomId',
+                    children: [
+                      {
+                        index: true,
+                        element: <ChatPage />,
+                      },
+                      {
+                        path: 'info',
+                        element: <RoomInfoPage />,
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        path: '*',
+        element: <NotFoundPage />,
+      },
+    ],
+  },
+]);
+
+root.render(
+  <React.StrictMode>
+    <UserProvider>
+      <RoomProvider>
+        <RouterProvider router={router} />
+      </RoomProvider>
+    </UserProvider>
+  </React.StrictMode>,
+);
