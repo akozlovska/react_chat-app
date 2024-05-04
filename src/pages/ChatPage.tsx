@@ -1,18 +1,18 @@
 /** @jsxImportSource theme-ui */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Button, Flex, Heading, Label } from 'theme-ui';
+import { Box, Button, Flex, Label } from 'theme-ui';
 import AnimatedLayout from '../components/AnimatedLayout';
-import MessageItem from '../components/Message';
 import { useUser } from '../context/UserContext';
-import * as messageService from '../api/services/messageService';
 import { Message } from '../types/Message';
 import { usePageError } from '../hooks/usePageError';
-import { getErrorMessage } from '../utils/getErrorMessage';
 import ErrorAlert from '../components/ErrorAlert';
 import { Field, Form, Formik, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import { AnimatePresence } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
+import MessageList from '../components/MessageList';
+import SuspenseWrapper from '../components/SuspenseWrapper';
 
 type NewMessageValues = {
   message: string;
@@ -50,13 +50,10 @@ const newMessageSchema = Yup.object().shape(
 const ChatPage = () => {
   const { roomId, directId } = useParams();
   const { user } = useUser();
-
-  const [error, setError] = usePageError('');
-  const [chatMessages, setChatMessages] = useState<Message[]>([]);
-
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-
+  const [error, setError] = usePageError();
   const [ws, setWs] = useState<WebSocket | null>(null);
+
+  const queryClient = useQueryClient();
 
   const handleSubmit = async (
     values: NewMessageValues,
@@ -75,37 +72,8 @@ const ChatPage = () => {
         ws?.send(JSON.stringify(message));
         formikHelpers.resetForm();
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(e));
   };
-
-  useEffect(() => {
-    if (roomId) {
-      messageService
-        .getRoomMessages(roomId)
-        .then(setChatMessages)
-        .catch((e) => setError(getErrorMessage(e)));
-    } else if (directId) {
-      messageService
-        .getDirectMessages(directId)
-        .then(setChatMessages)
-        .catch((e) => setError(getErrorMessage(e)));
-    }
-  }, [roomId, directId]);
-
-  useEffect(() => {
-    const updateScroll = () => {
-      const container = messagesContainerRef.current;
-      if (container) {
-        container.scrollTop = container.scrollHeight - container.clientHeight;
-      }
-    };
-
-    const timeout = setTimeout(updateScroll, 100);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [chatMessages]);
 
   useEffect(() => {
     const socket = new WebSocket(process.env.REACT_APP_WS_URL as string);
@@ -122,7 +90,12 @@ const ChatPage = () => {
       if (newMessage.error) {
         setError(newMessage.error);
       } else {
-        setChatMessages((curr) => [...curr, newMessage]);
+        queryClient.setQueryData(
+          ['chatMessages', { roomId, directId }],
+          (oldData: Message[]) => {
+            return [...oldData, newMessage];
+          },
+        );
       }
     };
 
@@ -138,32 +111,18 @@ const ChatPage = () => {
           height: '100%',
           flexDirection: 'column',
           justifyContent: 'space-between',
+          position: 'relative',
         }}
       >
-        <AnimatePresence>
-          {!!error && <ErrorAlert message={error} />}
-        </AnimatePresence>
-        {chatMessages.length ? (
-          <>
-            <Flex
-              ref={messagesContainerRef}
-              pt={3}
-              px={4}
-              sx={{
-                flexDirection: 'column',
-                gap: '20px',
-                overflowY: 'scroll',
-                scrollBehavior: 'smooth',
-              }}
-            >
-              {chatMessages.map((message) => (
-                <MessageItem key={message.id} message={message} />
-              ))}
-            </Flex>
-          </>
-        ) : (
-          <Heading m="auto">No messages yet</Heading>
-        )}
+        <Box sx={{ position: 'absolute', right: 0, left: 0 }}>
+          <AnimatePresence>
+            {!!error && <ErrorAlert message={error} />}
+          </AnimatePresence>
+        </Box>
+
+        <SuspenseWrapper>
+          <MessageList />
+        </SuspenseWrapper>
 
         <Formik
           initialValues={{ message: '' }}
@@ -188,6 +147,7 @@ const ChatPage = () => {
                 name="message"
                 id="message"
                 placeholder="Enter new message"
+                maxLength="200"
                 autoComplete="off"
                 sx={{
                   borderRadius: '10px',

@@ -1,44 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Badge, Flex, Grid, Text } from 'theme-ui';
 import { useUser } from '../context/UserContext';
-import { useNavigate } from 'react-router-dom';
-import { getRoomUsers } from '../api/services/roomService';
 import writeIcon from '../assets/write-icon.svg';
-import Icon from './Icon';
 import { Room } from '../types/Room';
-import { User } from '../types/User';
-import { useRoom } from '../context/RoomContext';
 import { usePageError } from '../hooks/usePageError';
-import { getErrorMessage } from '../utils/getErrorMessage';
 import ErrorAlert from './ErrorAlert';
 import { AnimatePresence } from 'framer-motion';
+import { useCreateDirect } from '../api/queries/directQueries';
+import { useRoomUsers } from '../api/queries/roomQueries';
+import IconBtn from './IconBtn';
 
 type Props = {
   room: Room;
 };
 
 const MembersList: React.FC<Props> = ({ room }) => {
-  const [roomMembers, setRoomMembers] = useState<User[]>([]);
   const { user } = useUser();
-  const { createDirect } = useRoom();
-  const navigate = useNavigate();
+  const [error, setError] = usePageError();
+  const roomUsersQuery = useRoomUsers(room.id);
+  const createDirectMutation = useCreateDirect();
 
-  const [error, setError] = usePageError('');
-
-  const handleCreate = async (username: string) => {
+  const openDirect = async (anotherUserId: string) => {
     if (user) {
-      createDirect(username)
-        .then((direct) => navigate(`/profile/directs/${direct?.id}`))
-        .catch((e) => setError(getErrorMessage(e)));
+      createDirectMutation.mutate({ userId: user.id, anotherUserId });
     }
   };
 
   useEffect(() => {
-    getRoomUsers(room.id)
-      .then(setRoomMembers)
-      .catch((e) => setError(getErrorMessage(e)));
-  }, [room]);
-  
+    if (createDirectMutation.error) {
+      setError(createDirectMutation.error);
+    }
+  }, [createDirectMutation.error]);
+
   return (
     <>
       <AnimatePresence>
@@ -55,7 +48,7 @@ const MembersList: React.FC<Props> = ({ room }) => {
           gridAutoColumns: '250px',
         }}
       >
-        {roomMembers.map((member) => (
+        {roomUsersQuery.data?.map((member) => (
           <Flex
             as="li"
             key={member.id}
@@ -77,10 +70,7 @@ const MembersList: React.FC<Props> = ({ room }) => {
             </Text>
 
             {member.username !== user?.username && (
-              <Icon
-                icon={writeIcon}
-                onClick={() => handleCreate(member.username)}
-              />
+              <IconBtn icon={writeIcon} onClick={() => openDirect(member.id)} />
             )}
           </Flex>
         ))}

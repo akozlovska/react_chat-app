@@ -1,11 +1,9 @@
-import React, { useContext, useMemo, useState } from 'react';
-import * as userService from '../api/services/userService';
+import React, { useContext, useState } from 'react';
 import { User } from '../types/User';
 
 type UserContextType = {
-  isAuthorized: boolean;
   user: User | null;
-  authorize: (username: string) => Promise<void>;
+  login: (user: User) => void;
   logout: () => void;
 };
 
@@ -17,29 +15,20 @@ type Props = {
 
 export const UserProvider: React.FC<Props> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const isAuthorized = useMemo(() => !!user, [user]);
 
-  const authorize = async (username: string) => {
-    const isLoggedIn = localStorage.getItem('chat-username');
-    if (isLoggedIn) {
-      const user = await userService.authorize(isLoggedIn);
-      setUser(user);
-    } else {
-    const user = await userService.authorize(username);
+  const login = (user: User) => {
     setUser(user);
     localStorage.setItem('chat-username', user.username);
-    }
   };
 
   const logout = () => {
-    localStorage.removeItem('chat-username');
     setUser(null);
+    localStorage.removeItem('chat-username');
   };
 
   const value = {
     user,
-    isAuthorized,
-    authorize,
+    login,
     logout,
   };
 

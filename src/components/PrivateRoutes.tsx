@@ -1,15 +1,18 @@
-import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 
 const PrivateRoutes = () => {
-  const { isAuthorized } = useUser();
+  const { user } = useUser();
+  const navigate = useNavigate();
 
-  if (!isAuthorized) {
-    return <Navigate to="/" replace />;
-  }
+  useEffect(() => {
+    if (!user) {
+      navigate('/', { replace: true });
+    }
+  }, [user]);
 
   return <Outlet />;
-}
+};
 
-export default PrivateRoutes
+export default PrivateRoutes;

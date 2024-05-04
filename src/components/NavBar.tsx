@@ -1,10 +1,10 @@
 import React from 'react';
 import { Avatar, Flex, Heading, Text, useColorMode } from 'theme-ui';
 import { useUser } from '../context/UserContext';
-import Icon from './Icon';
 import profileIcon from '../assets/profile-icon.svg';
 import sun from '../assets/sun-icon.svg';
 import moon from '../assets/moon-icon.svg';
+import IconBtn from './IconBtn';
 
 const NavBar = () => {
   const { user } = useUser();
@@ -31,7 +31,7 @@ const NavBar = () => {
             <Text sx={{ flexShrink: 0 }}>{user.username}</Text>
           </Flex>
         ) : (
-          <Icon
+          <IconBtn
             icon={colorMode === 'light' ? moon : sun}
             onClick={() =>
               setColorMode(colorMode === 'light' ? 'dark' : 'light')

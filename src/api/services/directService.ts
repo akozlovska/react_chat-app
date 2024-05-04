@@ -3,11 +3,15 @@ import { client } from '../client';
 
 type CreateDirectData = {
   userId: string;
-  anotherUser: string;
+  anotherUserId: string;
 };
 
-export const create = ({ userId, anotherUser }: CreateDirectData) => {
-  return client.post<never, Direct>('/directs', { userId, anotherUser });
+export const create = ({ userId, anotherUserId }: CreateDirectData) => {
+  return client.post<never, Direct>('/directs', { userId, anotherUserId });
+};
+
+export const remove = (directId: string) => {
+  return client.delete(`/directs/${directId}`);
 };
 
 export const getUserDirects = (userId: string) => {

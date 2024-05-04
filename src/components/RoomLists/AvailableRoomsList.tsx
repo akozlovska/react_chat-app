@@ -1,7 +1,6 @@
 /** @jsxImportSource theme-ui */
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRoom } from '../../context/RoomContext';
 import NoItemsFound from '../NoItemsFound';
 import { Button, Card, Flex, Text } from 'theme-ui';
 import { slideUpAnimation } from '../../utils/animations';
@@ -9,19 +8,30 @@ import AnimatedSlideLeft from '../AnimatedSlideLeft';
 import { Room } from '../../types/Room';
 import ErrorAlert from '../ErrorAlert';
 import { usePageError } from '../../hooks/usePageError';
-import { getErrorMessage } from '../../utils/getErrorMessage';
+import { useAvailableRooms, useJoinRoom } from '../../api/queries/roomQueries';
+import { useUser } from '../../context/UserContext';
 
 type RoomProps = {
   room: Room;
 };
 
 const AvailableRoom: React.FC<RoomProps> = ({ room }) => {
-  const { joinRoom } = useRoom();
-  const [error, setError] = usePageError('');
+  const [pageError, setPageError] = usePageError();
+
+  const { user } = useUser();
+  const { mutate, error, isPending } = useJoinRoom();
 
   const join = async (roomId: string) => {
-    joinRoom(roomId).catch((e) => setError(getErrorMessage(e)));
+    if (user) {
+      mutate({ roomId, userId: user.id });
+    }
   };
+
+  useEffect(() => {
+    if (error) {
+      setPageError(error);
+    }
+  }, [error]);
 
   return (
     <>
@@ -32,63 +42,53 @@ const AvailableRoom: React.FC<RoomProps> = ({ room }) => {
           sx={{ justifyContent: 'space-between', alignItems: 'center' }}
         >
           <Text>{room.name}</Text>
-          <Button onClick={() => join(room.id)}>Join</Button>
+          <Button disabled={isPending} onClick={() => join(room.id)}>
+            Join
+          </Button>
         </Flex>
       </Card>
       <AnimatePresence>
-        {!!error && <ErrorAlert message={error} />}
+        {!!pageError && <ErrorAlert message={pageError} />}
       </AnimatePresence>
     </>
   );
 };
 
 const AvailableRoomsList = () => {
-  const { allRooms, getAvailableRooms } = useRoom();
   const [isInitialRender, setIsInitialRender] = useState(true);
-  const [error, setError] = usePageError('');
+  const { data } = useAvailableRooms();
 
   useEffect(() => {
     setIsInitialRender(false);
   }, []);
 
-  useEffect(() => {
-    getAvailableRooms().catch((e) => setError(getErrorMessage(e)));
-  }, []);
-
   return (
-    <>
-      <AnimatePresence>
-        {!!error && <ErrorAlert message={error} />}
-      </AnimatePresence>
-      <Flex
-        as="ul"
-        p={0}
-        sx={{ listStyle: 'none', flexDirection: 'column', gap: '15px' }}
-      >
+    <Flex
+      as="ul"
+      p={0}
+      sx={{ listStyle: 'none', flexDirection: 'column', gap: '15px' }}
+    >
+      {data?.length ? (
         <AnimatePresence>
-          {allRooms.length ? (
-            <>
-              {allRooms.map((room, index) => (
-                <motion.li
-                  variants={slideUpAnimation}
-                  initial="hidden"
-                  animate={isInitialRender ? 'staggeredVisible' : 'visible'}
-                  exit="exit"
-                  custom={index}
-                  key={room.id}
-                >
-                  <AvailableRoom room={room} />
-                </motion.li>
-              ))}
-            </>
-          ) : (
-            <AnimatedSlideLeft key="1" order={2}>
-              <NoItemsFound message="No rooms for you to join yet" />
-            </AnimatedSlideLeft>
-          )}
+          {data.map((room, index) => (
+            <motion.li
+              variants={slideUpAnimation}
+              initial="hidden"
+              animate={isInitialRender ? 'staggeredVisible' : 'visible'}
+              exit="exit"
+              custom={index}
+              key={room.id}
+            >
+              <AvailableRoom room={room} />
+            </motion.li>
+          ))}
         </AnimatePresence>
-      </Flex>
-    </>
+      ) : (
+        <AnimatedSlideLeft key="1" order={2}>
+          <NoItemsFound message="No rooms for you to join yet" />
+        </AnimatedSlideLeft>
+      )}
+    </Flex>
   );
 };
 

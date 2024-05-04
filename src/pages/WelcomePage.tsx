@@ -1,14 +1,13 @@
 /** @jsxImportSource theme-ui */
 import { Field, Form, Formik, FormikProps } from 'formik';
 import { AnimatePresence } from 'framer-motion';
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
 import { Heading, Text, Box, Label, Button } from 'theme-ui';
 import * as Yup from 'yup';
+import { useAuthorize } from '../api/queries/userQueries';
+import AnimatedLayout from '../components/AnimatedLayout';
 import ErrorAlert from '../components/ErrorAlert';
-import { useUser } from '../context/UserContext';
 import { usePageError } from '../hooks/usePageError';
-import { getErrorMessage } from '../utils/getErrorMessage';
 
 type AuthorizationValues = {
   username: string;
@@ -27,74 +26,82 @@ const authorizationSchema = Yup.object().shape({
 });
 
 const WelcomePage = () => {
-  const { authorize } = useUser();
-  const navigate = useNavigate();
+  const [pageError, setPageError] = usePageError();
 
-  const [error, setError] = usePageError('');
+  const { mutate, error, isPending } = useAuthorize();
 
-  const handleSubmit = async (values: AuthorizationValues) => {
-    authorize(values.username)
-      .then(() => navigate('profile'))
-      .catch((e) => setError(getErrorMessage(e)));
+  const handleAuthorize = async (values: AuthorizationValues) => {
+    mutate(values.username);
   };
 
+  useEffect(() => {
+    if (error) {
+      setPageError(error);
+    }
+  }, [error]);
+
   return (
-    <Box
-      as="section"
-      m={'auto'}
-      sx={{
-        width: '40%',
-        textAlign: 'center',
-      }}
-    >
-      <Heading variant="styles.h2">Welcome to React Chat App</Heading>
-      <Text>Please, enter your username to continue</Text>
-      <Box p={4}>
-        <Formik
-          initialValues={{ username: '' }}
-          validationSchema={authorizationSchema}
-          onSubmit={handleSubmit}
-          validateOnChange={false}
-        >
-          {({ errors, touched }: FormikProps<AuthorizationValues>) => (
-            <Form>
-              <Label htmlFor="username" variant="labels.hidden">
-                Username
-              </Label>
-              <Field
-                name="username"
-                id="username"
-                placeholder="Enter your username"
-                autoComplete="username"
-                sx={{
-                  borderRadius: '10px',
-                  outlineColor: 'secondary',
-                  display: 'block',
-                  width: '100%',
-                  p: 2,
-                  mb: 3,
-                  appearance: 'none',
-                  fontSize: 'inherit',
-                  lineHeight: 'inherit',
-                  border: '1px solid',
-                  color: 'inherit',
-                  bg: 'transparent',
-                }}
-              />
-              <AnimatePresence>
-                {errors.username && touched.username && (
-                  <ErrorAlert message={errors.username} />
-                )}
-              </AnimatePresence>
-              <Button type="submit">Continue</Button>
-            </Form>
-          )}
-        </Formik>
-        <AnimatePresence>
-          {!!error && <ErrorAlert message={error} />}
-        </AnimatePresence>
+    <AnimatedLayout>
+      <Box
+        as="section"
+        mx={'auto'}
+        pt={'15%'}
+        sx={{
+          width: '40%',
+          textAlign: 'center',
+        }}
+      >
+        <Heading variant="styles.h2">Welcome to React Chat App</Heading>
+        <Text>Please, enter your username to continue</Text>
+        <Box p={4}>
+          <Formik
+            initialValues={{ username: '' }}
+            validationSchema={authorizationSchema}
+            onSubmit={handleAuthorize}
+            validateOnChange={false}
+          >
+            {({ errors, touched }: FormikProps<AuthorizationValues>) => (
+              <Form>
+                <Label htmlFor="username" variant="labels.hidden">
+                  Username
+                </Label>
+                <Field
+                  name="username"
+                  id="username"
+                  placeholder="Enter your username"
+                  autoComplete="username"
+                  sx={{
+                    borderRadius: '10px',
+                    outlineColor: 'secondary',
+                    display: 'block',
+                    width: '100%',
+                    p: 2,
+                    mb: 3,
+                    appearance: 'none',
+                    fontSize: 'inherit',
+                    lineHeight: 'inherit',
+                    border: '1px solid',
+                    color: 'inherit',
+                    bg: 'transparent',
+                  }}
+                />
+                <AnimatePresence>
+                  {errors.username && touched.username && (
+                    <ErrorAlert message={errors.username} />
+                  )}
+                </AnimatePresence>
+                <Button type="submit" disabled={isPending}>
+                  Continue
+                </Button>
+              </Form>
+            )}
+          </Formik>
+          <AnimatePresence>
+            {!!pageError && <ErrorAlert message={pageError} />}
+          </AnimatePresence>
+        </Box>
       </Box>
-    </Box>
+    </AnimatedLayout>
   );
 };
 

@@ -1,24 +1,23 @@
 /** @jsxImportSource theme-ui */
-import React, { useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useEffect, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
 import { Badge, Button, Divider, Flex, Heading, Label } from 'theme-ui';
-import {
-  Field,
-  Form,
-  Formik,
-  FormikHelpers,
-  FormikProps,
-} from 'formik';
+import { Field, Form, Formik, FormikHelpers, FormikProps } from 'formik';
 import * as Yup from 'yup';
 import AnimatedLayout from '../components/AnimatedLayout';
-import { useRoom } from '../context/RoomContext';
 import { useUser } from '../context/UserContext';
 import AnimatedSlideLeft from '../components/AnimatedSlideLeft';
 import MembersList from '../components/MembersList';
 import ErrorAlert from '../components/ErrorAlert';
 import { usePageError } from '../hooks/usePageError';
-import { getErrorMessage } from '../utils/getErrorMessage';
 import { AnimatePresence } from 'framer-motion';
+import {
+  useDeleteRoom,
+  useEditRoom,
+  useLeaveRoom,
+  useUserRooms,
+} from '../api/queries/roomQueries';
+import SuspenseWrapper from '../components/SuspenseWrapper';
 
 type RoomEditValues = {
   name: string;
@@ -34,21 +33,22 @@ const roomEditSchema = Yup.object().shape({
 
 const RoomInfoPage = () => {
   const { roomId } = useParams();
-  const { userRooms, renameRoom, deleteRoom, leaveRoom } = useRoom();
   const { user } = useUser();
-  const room = useMemo(() => {
-    return userRooms.find((room) => room.id === roomId);
-  }, [roomId, userRooms]);
+  const userRoomsQuery = useUserRooms();
+  const room = useMemo(
+    () => userRoomsQuery.data?.find((room) => room.id === roomId),
+    [userRoomsQuery.data, roomId],
+  );
 
-  const navigate = useNavigate();
+  const [pageError, setPageError] = usePageError();
 
-  const [error, setError] = usePageError('');
+  const leaveRoomMutation = useLeaveRoom();
+  const editRoomMutation = useEditRoom();
+  const deleteRoomMutation = useDeleteRoom();
 
   const handleLeave = async () => {
-    if (roomId) {
-      leaveRoom(roomId)
-        .then(() => navigate('/profile/rooms'))
-        .catch((e) => setError(getErrorMessage(e)));
+    if (roomId && user) {
+      leaveRoomMutation.mutate({ roomId, userId: user.id });
     }
   };
 
@@ -57,25 +57,41 @@ const RoomInfoPage = () => {
     formikHelpers: FormikHelpers<RoomEditValues>,
   ) => {
     if (roomId) {
-      renameRoom(values.name, roomId)
-        .then(() => formikHelpers.resetForm())
-        .catch((e) => setError(getErrorMessage(e)));
+      editRoomMutation
+        .mutateAsync({ name: values.name, roomId })
+        .then(() => formikHelpers.resetForm());
     }
   };
 
   const handleDelete = async () => {
     if (roomId) {
-      deleteRoom(roomId)
-        .then(() => navigate('/profile/rooms'))
-        .catch((e) => setError(getErrorMessage(e)));
+      deleteRoomMutation.mutate(roomId);
     }
   };
+
+  useEffect(() => {
+    if (leaveRoomMutation.error) {
+      setPageError(leaveRoomMutation.error);
+    }
+  }, [leaveRoomMutation.error]);
+
+  useEffect(() => {
+    if (editRoomMutation.error) {
+      setPageError(editRoomMutation.error);
+    }
+  }, [editRoomMutation.error]);
+
+  useEffect(() => {
+    if (deleteRoomMutation.error) {
+      setPageError(deleteRoomMutation.error);
+    }
+  }, [deleteRoomMutation.error]);
 
   return (
     <AnimatedLayout>
       <Flex py={4} px={5} sx={{ flexDirection: 'column', gap: '20px' }}>
         <AnimatePresence>
-          {!!error && <ErrorAlert message={error} />}
+          {!!pageError && <ErrorAlert message={pageError} />}
         </AnimatePresence>
         <AnimatedSlideLeft order={1}>
           <Flex sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
@@ -87,11 +103,19 @@ const RoomInfoPage = () => {
             </Flex>
 
             {room?.adminId === user?.id ? (
-              <Button variant="outline" onClick={handleDelete}>
+              <Button
+                variant="outline"
+                disabled={deleteRoomMutation.isPending}
+                onClick={handleDelete}
+              >
                 Delete room
               </Button>
             ) : (
-              <Button variant="outline" onClick={handleLeave}>
+              <Button
+                variant="outline"
+                disabled={leaveRoomMutation.isPending}
+                onClick={handleLeave}
+              >
                 Leave room
               </Button>
             )}
@@ -140,7 +164,11 @@ const RoomInfoPage = () => {
                     bg: 'transparent',
                   }}
                 />
-                <Button type="submit" sx={{ flexShrink: 0 }}>
+                <Button
+                  type="submit"
+                  disabled={editRoomMutation.isPending}
+                  sx={{ flexShrink: 0 }}
+                >
                   Save
                 </Button>
                 <AnimatePresence>
@@ -157,7 +185,9 @@ const RoomInfoPage = () => {
 
         <AnimatedSlideLeft order={3}>
           <Heading mb={3}>Members &nbsp; &#128101;</Heading>
-          {!!room && <MembersList room={room} />}
+          <SuspenseWrapper>
+            {!!room && <MembersList room={room} />}
+          </SuspenseWrapper>
         </AnimatedSlideLeft>
       </Flex>
     </AnimatedLayout>

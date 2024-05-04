@@ -11,8 +11,7 @@ const NoItemsFound: React.FC<Props> = ({ message }) => {
       as="h3"
       sx={{
         p: 3,
-        mx: 'auto',
-        mt: '10%',
+        m: 'auto',
         width: 'fit-content',
         borderRadius: '10px',
         bg: 'highlight',

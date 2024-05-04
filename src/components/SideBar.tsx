@@ -15,10 +15,12 @@ const SideBar = () => {
   const [colorMode, setColorMode] = useColorMode();
   const { logout } = useUser();
   const navigate = useNavigate();
+
   const handleLogout = () => {
-    logout();
     navigate('/');
+    logout();
   };
+
   return (
     <AnimatePresence>
       <motion.aside

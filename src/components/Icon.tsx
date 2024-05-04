@@ -1,19 +1,15 @@
 import React from 'react';
-import { IconButton, Image } from 'theme-ui';
+import { Flex, Image } from 'theme-ui';
 
 type Props = {
-  onClick?: React.MouseEventHandler<HTMLButtonElement>;
   icon: string;
 };
 
-const Icon: React.FC<Props> = ({ onClick, icon }) => {
+const Icon: React.FC<Props> = ({ icon }) => {
   return (
-    <IconButton
-      sx={{ width: '42px', height: '42px', flexShrink: 0 }}
-      onClick={onClick}
-    >
+    <Flex sx={{ p: '4px', width: '42px', height: '42px', flexShrink: 0 }}>
       <Image src={icon} variant="avatar" sx={{ cursor: 'pointer' }} />
-    </IconButton>
+    </Flex>
   );
 };
 

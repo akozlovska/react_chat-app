@@ -4,17 +4,20 @@ import { Box, Button, Flex, Heading } from 'theme-ui';
 import { sideMenuAnimation } from '../utils/animations';
 import UserRoomsList from './RoomLists/UserRoomsList';
 import DirectsList from './RoomLists/DirectsList';
-import { useLocation } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import SuspenseWrapper from './SuspenseWrapper';
 
 const SideMenu = () => {
   const [listShown, setListShown] = useState<'rooms' | 'directs'>('rooms');
-  const location = useLocation().pathname.split('/')[2];
+  const { roomId, directId } = useParams();
 
   useEffect(() => {
-      if (location === 'rooms' || location === 'directs') {
-        setListShown(location);
-      }
-  }, [location]);
+    if (roomId) {
+      setListShown('rooms');
+    } else if (directId) {
+      setListShown('directs');
+    }
+  }, [roomId, directId]);
 
   return (
     <AnimatePresence>
@@ -42,7 +45,10 @@ const SideMenu = () => {
               <Heading as="h3">Directs</Heading>
             </Button>
           </Flex>
-          {listShown === 'rooms' ? <UserRoomsList /> : <DirectsList />}
+
+          <SuspenseWrapper>
+            {listShown === 'rooms' ? <UserRoomsList /> : <DirectsList />}
+          </SuspenseWrapper>
         </Box>
       </motion.div>
     </AnimatePresence>

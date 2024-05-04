@@ -1,9 +1,20 @@
+import { AxiosError } from 'axios';
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 
-export const usePageError = (
-  pageError: string,
-): [string, Dispatch<SetStateAction<string>>] => {
-  const [error, setError] = useState(pageError);
+export const usePageError = (): [string, Dispatch<SetStateAction<any>>] => {
+  const [error, setError] = useState('');
+
+  const setErrorMessage = (err: any) => {
+    if (typeof err === 'string') {
+      setError(err);
+    } else if (err instanceof AxiosError) {
+      setError(err.response?.data?.message);
+    } else if (err instanceof Error) {
+      setError(err.message);
+    } else {
+      setError('Unknown error');
+    }
+  };
 
   useEffect(() => {
     if (!error) {
@@ -19,5 +30,5 @@ export const usePageError = (
     };
   }, [error]);
 
-  return [error, setError];
+  return [error, setErrorMessage];
 };

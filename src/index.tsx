@@ -1,18 +1,19 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
-import { RoomProvider } from './context/RoomContext';
-import ProfilePage from './pages/ProfilePage';
+import App from './App';
 import WelcomePage from './pages/WelcomePage';
 import PrivateRoutes from './components/PrivateRoutes';
-import CreateRoomPage from './pages/CreateRoomPage';
-import AllRoomsPage from './pages/AllRoomsPage';
-import ChatPage from './pages/ChatPage';
-import RoomInfoPage from './pages/RoomInfoPage';
-import NotFoundPage from './pages/NotFoundPage';
-import './index.scss';
+import Loader from './components/Loader';
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const CreateRoomPage = lazy(() => import('./pages/CreateRoomPage'));
+const AllRoomsPage = lazy(() => import('./pages/AllRoomsPage'));
+const ChatPage = lazy(() => import('./pages/ChatPage'));
+const RoomInfoPage = lazy(() => import('./pages/RoomInfoPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement,
@@ -32,14 +33,22 @@ const router = createBrowserRouter([
         children: [
           {
             path: 'profile',
-            element: <ProfilePage />,
+            element: (
+              <Suspense fallback={<Loader />}>
+                <ProfilePage />
+              </Suspense>
+            ),
             children: [
               {
                 path: 'directs',
                 children: [
                   {
                     path: ':directId',
-                    element: <ChatPage />,
+                    element: (
+                      <Suspense fallback={<Loader />}>
+                        <ChatPage />
+                      </Suspense>
+                    ),
                   },
                 ],
               },
@@ -48,22 +57,38 @@ const router = createBrowserRouter([
                 children: [
                   {
                     index: true,
-                    element: <AllRoomsPage />,
+                    element: (
+                      <Suspense fallback={<Loader />}>
+                        <AllRoomsPage />
+                      </Suspense>
+                    ),
                   },
                   {
                     path: 'create',
-                    element: <CreateRoomPage />,
+                    element: (
+                      <Suspense fallback={<Loader />}>
+                        <CreateRoomPage />
+                      </Suspense>
+                    ),
                   },
                   {
                     path: ':roomId',
                     children: [
                       {
                         index: true,
-                        element: <ChatPage />,
+                        element: (
+                          <Suspense fallback={<Loader />}>
+                            <ChatPage />
+                          </Suspense>
+                        ),
                       },
                       {
                         path: 'info',
-                        element: <RoomInfoPage />,
+                        element: (
+                          <Suspense fallback={<Loader />}>
+                            <RoomInfoPage />
+                          </Suspense>
+                        ),
                       },
                     ],
                   },
@@ -75,18 +100,25 @@ const router = createBrowserRouter([
       },
       {
         path: '*',
-        element: <NotFoundPage />,
+        element: (
+          <Suspense fallback={<Loader />}>
+            <NotFoundPage />
+          </Suspense>
+        ),
       },
     ],
   },
 ]);
 
+const queryClient = new QueryClient();
+
 root.render(
   <React.StrictMode>
     <UserProvider>
-      <RoomProvider>
+      <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
-      </RoomProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
     </UserProvider>
   </React.StrictMode>,
 );

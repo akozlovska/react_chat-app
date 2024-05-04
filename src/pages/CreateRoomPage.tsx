@@ -1,39 +1,44 @@
 /** @jsxImportSource theme-ui */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Field, Form, Formik, FormikProps } from 'formik';
 import * as Yup from 'yup';
-import { useNavigate } from 'react-router-dom';
 import { Heading, Box, Label, Button, Flex, Text } from 'theme-ui';
-import { useRoom } from '../context/RoomContext';
 import AnimatedLayout from '../components/AnimatedLayout';
 import ErrorAlert from '../components/ErrorAlert';
 import { usePageError } from '../hooks/usePageError';
-import { getErrorMessage } from '../utils/getErrorMessage';
 import { AnimatePresence } from 'framer-motion';
+import { useCreateRoom } from '../api/queries/roomQueries';
+import { useUser } from '../context/UserContext';
 
 type NewRoomValues = {
   name: string;
 };
 
+const newRoomSchema = Yup.object().shape({
+  name: Yup.string()
+    .trim()
+    .min(6, 'Name of the room must be at least 6 characters')
+    .max(20, 'Name of the room is too long')
+    .required('You must enter  a name of the new room'),
+});
+
 const CreateRoomPage = () => {
-  const { createRoom } = useRoom();
-  const navigate = useNavigate();
+  const { user } = useUser();
 
-  const [error, setError] = usePageError('');
-
-  const NewRoomSchema = Yup.object().shape({
-    name: Yup.string()
-      .trim()
-      .min(6, 'Name of the room must be at least 6 characters')
-      .max(20, 'Name of the room is too long')
-      .required('You must enter  a name of the new room'),
-  });
+  const [pageError, setPageError] = usePageError();
+  const { mutate, error, isPending } = useCreateRoom();
 
   const handleCreate = async (values: NewRoomValues) => {
-    createRoom(values.name)
-      .then((newRoom) => navigate(`/profile/rooms/${newRoom.id}`))
-      .catch((e) => setError(getErrorMessage(e)));
+    if (user) {
+      mutate({ name: values.name, userId: user.id });
+    }
   };
+
+  useEffect(() => {
+    if (error) {
+      setPageError(error);
+    }
+  }, [error]);
 
   return (
     <AnimatedLayout>
@@ -52,7 +57,7 @@ const CreateRoomPage = () => {
         <Box p={4}>
           <Formik
             initialValues={{ name: '' }}
-            validationSchema={NewRoomSchema}
+            validationSchema={newRoomSchema}
             onSubmit={handleCreate}
             validateOnChange={false}
           >
@@ -87,12 +92,14 @@ const CreateRoomPage = () => {
                     <ErrorAlert message={errors.name} />
                   )}
                 </AnimatePresence>
-                <Button type="submit">Create</Button>
+                <Button type="submit" disabled={isPending}>
+                  Create
+                </Button>
               </Form>
             )}
           </Formik>
           <AnimatePresence>
-            {!!error && <ErrorAlert message={error} />}
+            {!!pageError && <ErrorAlert message={pageError} />}
           </AnimatePresence>
         </Box>
       </Flex>

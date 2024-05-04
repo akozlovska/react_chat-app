@@ -13,10 +13,15 @@ const buttons = {
     color: 'light',
     border: '1px solid',
     borderColor: 'primary',
-    transition: `all 0.3s ease-in-out`,
+    transition: 'all 0.3s ease-in-out',
     '&:hover': {
       background: `transparent`,
       color: 'text',
+    },
+    '&:disabled': {
+      cursor: 'auto',
+      background: transparentize('primary', 0.5),
+      color: transparentize('text', 0.5),
     },
   },
   outline: {
@@ -25,16 +30,34 @@ const buttons = {
     border: '1px solid',
     borderColor: 'primary',
     color: 'text',
-    transition: `all 0.3s ease-in-out`,
+    transition: 'all 0.3s ease-in-out',
     '&:hover': {
       background: 'primary',
       color: 'light',
+    },
+    '&:disabled': {
+      cursor: 'auto',
+      background: transparentize('primary', 0.8),
+      color: transparentize('text', 0.8),
     },
   },
 
   sideBar: {
     ...buttonsGeneralStyles,
     p: 0,
+  },
+  sm: {
+    cursor: 'pointer',
+    p: 0,
+    background: 'transparent',
+    border: 'none',
+    fontSize: 1,
+    textDecoration: 'underline',
+    color: 'text',
+    '&:disabled': {
+      cursor: 'auto',
+      color: transparentize('text', 0.8),
+    },
   },
 };
 
@@ -43,7 +66,7 @@ const tabs = {
     ...buttonsGeneralStyles,
     background: 'transparent',
     color: 'text',
-    transition: `all 0.3s ease-in-out`,
+    transition: 'all 0.3s ease-in-out',
     '&:hover': {
       background: 'highlight',
     },
@@ -52,7 +75,7 @@ const tabs = {
     ...buttonsGeneralStyles,
     background: 'transparent',
     color: transparentize('text', 0.5),
-    transition: `all 0.3s ease-in-out`,
+    transition: 'all 0.3s ease-in-out',
     '&:hover': {
       background: 'highlight',
     },
@@ -139,14 +162,33 @@ const badges = {
 
 const messages = {
   own: {
+    px: 3,
+    py: 2,
     bg: transparentize('gray', 0.6),
     borderRadius: '10px',
     minWidth: '200px',
+    maxWidth: '50%',
+    transition: 'all 0.3s ease-in-out',
   },
   other: {
+    px: 3,
+    py: 2,
     bg: transparentize('secondary', 0.6),
     borderRadius: '10px',
     minWidth: '200px',
+    maxWidth: '50%',
+    transition: 'all 0.3s ease-in-out',
+  },
+  edit: {
+    px: 3,
+    py: 2,
+    bg: 'light',
+    border: '2px solid',
+    borderColor: transparentize('gray', 0.6),
+    color: deep.colors.background,
+    borderRadius: '10px',
+    width: '50%',
+    transition: 'all 0.3s ease-in-out',
   },
 };
 

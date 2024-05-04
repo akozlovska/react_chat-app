@@ -3,6 +3,7 @@ import { Box, Heading } from 'theme-ui';
 import AnimatedLayout from '../components/AnimatedLayout';
 import AnimatedSlideLeft from '../components/AnimatedSlideLeft';
 import AvailableRoomsList from '../components/RoomLists/AvailableRoomsList';
+import SuspenseWrapper from '../components/SuspenseWrapper';
 
 const AllRoomsPage = () => {
   return (
@@ -14,7 +15,9 @@ const AllRoomsPage = () => {
           </Heading>
         </AnimatedSlideLeft>
 
-        <AvailableRoomsList />
+        <SuspenseWrapper>
+          <AvailableRoomsList />
+        </SuspenseWrapper>
       </Box>
     </AnimatedLayout>
   );
